@@ -80,29 +80,38 @@ Cliente calcClienteProximo(Veiculo v1){
 			if(isAvailable(v1, c[i])) {
 				distancia = calcDistancia(c[v1.state], c[i]);
 				if (distancia < distanciaMin) {
-					distanciaMin= distancia;
+					distanciaMin = distancia;
 					clienteMin = c[i];
 				}
 			}
 		}
 	}
 
+	printf("ID %d\n", clienteMin.id);
+
 	return clienteMin;
 }
 
-void calcCaminho(Veiculo v1){
-	printf("Veiculo está em %d", v1.state);
+int i = 0;
 
-	//Achar cliente disponível mais próximo
-	Cliente clienteProx = calcClienteProximo(v1);
+int calcCaminho(Veiculo v1){
+	if(i < 3) {
+		printf("Veiculo está em %d ", v1.state);
 
-	printf("Cliente %d é o disponível mais proximo\n", clienteProx.id);
-		
-	v1.capacity = v1.capacity - clienteProx.demanda;
-	c[clienteProx.id].demanda = 0;
-	v1.state = clienteProx.id;
+		//Achar cliente disponível mais próximo
+		Cliente clienteProx = calcClienteProximo(v1);
 
-	calcCaminho(v1);
+		printf("Cliente %d é o disponível mais proximo\n", clienteProx.id);
+			
+		v1.capacity = v1.capacity - clienteProx.demanda;
+		c[clienteProx.id].demanda = 0;
+		v1.state = clienteProx.id;
+
+		i++;
+		calcCaminho(v1);
+	} else {
+		return 0;
+	}
 }
 
 int main() {
@@ -122,4 +131,6 @@ int main() {
 	}
 
 	calcCaminho(v[0]);
+
+	printf("%d", c[7].demanda);
 }
