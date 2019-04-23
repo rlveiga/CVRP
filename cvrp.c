@@ -4,7 +4,7 @@
 #include <math.h>
 
 //Para  X-n101-k25
-#define N 4 // clientes + depósito
+#define N 15 // clientes + depósito
 #define V 1 //  numero minimo de veículos
 #define C 206
 
@@ -16,7 +16,7 @@ typedef struct Cliente
 	double demanda;
 } Cliente;
 
-Cliente c[N];
+Cliente *c;
 
 typedef struct Veiculo
 {
@@ -31,6 +31,8 @@ Veiculo v[V]; // Inicializando vetor de veículos
 
 void clientsInit() {
 	srand(time(NULL));
+
+	c = malloc(N * sizeof(Cliente));
 
 	for(int i = 0; i < N; i++) {
 		c[i].id = i;
@@ -74,6 +76,11 @@ Cliente calcClienteProximo(Veiculo v1){
 	double distancia, distanciaMin = 10000;
 	Cliente clienteMin;
 
+	//Inicializa cliente como depósito até que seja encontrado um cliente disponível
+	clienteMin.id = c[0].id;
+	clienteMin.x = c[0].x;
+	clienteMin.y = c[0].y;
+
 	for(int i = 0; i < N; i++){
 		//Evitar problema dele calculando distancia entre ele mesmo
 		if(v1.state != c[i].id) {
@@ -87,19 +94,21 @@ Cliente calcClienteProximo(Veiculo v1){
 		}
 	}
 
-	printf("ID %d\n", clienteMin.id);
-
 	return clienteMin;
 }
 
-int i = 0;
-
 int calcCaminho(Veiculo v1){
-	if(i < 3) {
-		printf("Veiculo está em %d ", v1.state);
+		printf("Veiculo está em %d\n", v1.state);
+		printf("Capacidade do veículo: %d\n", v1.capacity);
 
 		//Achar cliente disponível mais próximo
 		Cliente clienteProx = calcClienteProximo(v1);
+
+		//Veículo volta pro depósito
+		if(clienteProx.id == 0) {
+			printf("Veículo voltou para o depósito\n");
+			return 0;
+		}
 
 		printf("Cliente %d é o disponível mais proximo\n", clienteProx.id);
 			
@@ -107,11 +116,7 @@ int calcCaminho(Veiculo v1){
 		c[clienteProx.id].demanda = 0;
 		v1.state = clienteProx.id;
 
-		i++;
 		calcCaminho(v1);
-	} else {
-		return 0;
-	}
 }
 
 int main() {
@@ -132,5 +137,5 @@ int main() {
 
 	calcCaminho(v[0]);
 
-	printf("%d", c[7].demanda);
+	free(c);
 }
