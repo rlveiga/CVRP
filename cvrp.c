@@ -4,9 +4,9 @@
 #include <math.h>
 
 //Para  X-n101-k25
-#define N 101 // clientes + depósito
-#define V 25 //  numero minimo de veículos
-#define C 206
+#define N 204 // clientes + depósito
+#define V 19 //  numero minimo de veículos
+#define C 836
 
 //Arestas distancia entre pontos
 double d[N][N];
@@ -57,21 +57,61 @@ double getCostOf(Cliente *path) {
 
 	return cost;
 }
-double bestCost = 100000;
+
+int getNeighborhood2(Cliente *corrente, int index) {
+
+	double bestCost = getCostOf(corrente);
+
+	Cliente *aux = corrente;
+
+	int i = 0;
+	int j = 0;
+	double cost = 100000;
+
+	while(corrente[i].id != 0) {
+		while(corrente[j].id != 0) {
+			if(i != j) {
+				if(cost < bestCost) {
+					for(int i = 0; i < N-1; i++) {
+						s[index][i] = corrente[i];
+					}
+					return 1;
+				}
+
+				Cliente temp = aux[i];
+				corrente[i] = aux[j];
+				corrente[j] = temp;
+
+				cost = getCostOf(corrente);
+			}
+			j++;
+		}
+		i++;
+	}
+
+	return 0;
+}
 
 void getNeighborhood(Cliente *corrente, int index) {
+
+	double bestCost = getCostOf(corrente);
+
 	Cliente *aux = corrente;
 
 	int i = 0;
 	int j = 0;
 	double cost;
 
+	printf("Custo antes de manipulacao: %.2f\n", getCostOf(corrente));
+
 	while(corrente[i].id != 0) {
 		while(corrente[j].id != 0) {
 			if(i != j) {
+
 				cost = getCostOf(corrente);
 
 				if(cost < bestCost) {
+					printf("Novo melhor caminho\n", cost);
 					for(int i = 0; i < N-1; i++) {
 						s[index][i] = corrente[i];
 					}
@@ -79,7 +119,6 @@ void getNeighborhood(Cliente *corrente, int index) {
 				}
 
 				Cliente temp = aux[i];
-
 				corrente[i] = aux[j];
 				corrente[j] = temp;
 			}
@@ -88,14 +127,16 @@ void getNeighborhood(Cliente *corrente, int index) {
 		i++;
 	}
 
-	printf("Novo caminho do veiculo %d:\n", v[index].id);
+	printf("Custo depois de manipulacao: %.2f\n", getCostOf(s[index]));
 
-	i = 0;
+	// printf("Novo caminho do veiculo %d:\n", v[index].id);
 
-	while(s[index][i].id != 0) {
-		printf("%d\n", s[index][i].id);
-		i++;
-	}
+	// i = 0;
+
+	// while(s[index][i].id != 0) {
+	// 	printf("%d\n", s[index][i].id);
+	// 	i++;
+	// }
 }
 
 void clientsInitFile(FILE* arq) {
@@ -148,7 +189,7 @@ void vehiclesInit() {
 	}
 }
 
-//Distacia entre cliente1 e clienet2
+//Distacia entre cliente1 e cliente2
 double calcDistancia(Cliente cliente1,Cliente cliente2){
 	return sqrt(pow(abs(cliente1.x-cliente2.x),2)+ pow(abs(cliente1.y-cliente2.y),2));
 }
@@ -212,7 +253,6 @@ int geraCaminho(Veiculo v1){
 
 		//Veículo volta pro depósito
 		if(clienteProx.id == 1) {
-
 			counter = 0;
 			return 0;
 		}
@@ -232,7 +272,7 @@ int main() {
 	double totalCost = 0;
 
 	FILE *arq;
-	arq = fopen("X-n101-k25.txt","rt");
+	arq = fopen("X-n204-k19.txt","rt");
 	if(arq == NULL){
    		printf("Erro, nao foi possivel abrir o arquivo\n");
  	}
@@ -252,7 +292,7 @@ int main() {
 
 	int j = 0;
 	for(int i = 0; i < V; i++) {
-		printf("Rota do  veiculo %d\n", v[i].id);
+		printf("Rota do veiculo %d\n", v[i].id);
 		while(s[i][j].id != 0) {
 			printf("%d\n", s[i][j].id);
 			j++;
@@ -269,11 +309,25 @@ int main() {
 	}
 	printf("Custo inicial: %.2f\n", totalCost);
 
+	totalCost = 0;
+
 	for(int i = 0; i < V; i++) {
-		getNeighborhood(s[i], i);
+		for(int j = 0; j < 50; j++)
+			getNeighborhood2(s[i], i);
 	}
 
-	totalCost = 0;
+	printf("Solucao final:\n");
+
+	j = 0;
+	for(int i = 0; i < V; i++) {
+		printf("Rota do veiculo %d\n", v[i].id);
+		while(s[i][j].id != 0) {
+			printf("%d\n", s[i][j].id);
+			j++;
+		}
+
+		j = 0;
+	}
 
 	for(int i = 0; i < V; i++) {
 		totalCost = totalCost + getCostOf(s[i]);
