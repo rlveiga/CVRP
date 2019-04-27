@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <time.h>
 
 //Para  X-n101-k25
 #define N 204 // clientes + depósito
@@ -270,9 +271,11 @@ int geraCaminho(Veiculo v1){
 int main() {
 
 	double totalCost = 0;
+	clock_t start,end;
+	double cpu_time_used;
 
 	FILE *arq;
-	arq = fopen("X-n204-k19.txt","rt");
+	arq = fopen("X-n101-k25.txt","rt");
 	if(arq == NULL){
    		printf("Erro, nao foi possivel abrir o arquivo\n");
  	}
@@ -311,13 +314,15 @@ int main() {
 
 	totalCost = 0;
 
+	start = clock();
 	for(int i = 0; i < V; i++) {
 		for(int j = 0; j < 50; j++)
 			getNeighborhood2(s[i], i);
 	}
+	end  = clock();
+	cpu_time_used =((double)(end-start))/CLOCKS_PER_SEC;
 
 	printf("Solucao final:\n");
-
 	j = 0;
 	for(int i = 0; i < V; i++) {
 		printf("Rota do veiculo %d\n", v[i].id);
@@ -333,7 +338,7 @@ int main() {
 		totalCost = totalCost + getCostOf(s[i]);
 	}
 	printf("Custo final: %.2f\n", totalCost);
-
+	printf("Tempo(in seconds): %.6f\n", cpu_time_used);
 	free(c);
 	free(v);
 }
