@@ -4,11 +4,11 @@
 #include <math.h>
 #include <time.h>
 
-#define N 101 // clientes + depósito
-#define V 25 //  numero minimo de veículos
-#define C 206
+#define N 204 // clientes + depósito
+#define V 19 //  numero minimo de veículos
+#define C 836
 
-//Arestas distancia entre pontos
+//Matriz representando distancia entre pontos (arestas)
 double d[N][N];
 
 typedef struct Cliente
@@ -37,6 +37,7 @@ Cliente s[V][N-1];
 
 void exibeRota(Cliente *path) {
 	int i = 0;
+
 	while(path[i].id != 1) {
 		printf("%d\n", path[i].id);
 		i++;
@@ -60,13 +61,11 @@ double getCostOf(Cliente *path) {
 
 	//Custo depósito --> primeiro cliente
 	cost = cost + d[1][path[0].id];
-	// printf("Custo deposito - %d: %.2f\n", path[0].id, d[1][path[0].id]);
 
 	int i = 0;
 	//Enquanto o veiculo não volta para o depósito, somar custo entre clientes
 	while(path[i+1].id != 1) {
 		cost = cost + d[path[i].id][path[i+1].id]; 
-		// printf("Custo %d - %d: %.2f\n", path[i].id, path[i+1].id, d[path[i].id][path[i+1].id]);
 		i++;
 	}
 
@@ -77,20 +76,14 @@ double getCostOf(Cliente *path) {
 }
 
 void getNeighborhood(Cliente *corrente, int index) {
-
-	// exibeRota(corrente);
-
+	//Melhor custo é o da solução corrente até que seja provado o contrário
 	double bestCost = getCostOf(corrente);
 
 	Cliente aux[N-1];
 
-	copyArray(corrente, aux);
-
 	int i = 0;
 	int j = 0;
 	double cost;
-
-	// printf("Custo antes da manipulação: %.2f\n", getCostOf(corrente));
 
 	while(corrente[i].id != 1) {
 		while(corrente[j].id != 1) {
@@ -105,7 +98,6 @@ void getNeighborhood(Cliente *corrente, int index) {
 				cost = getCostOf(aux);
 
 				if(cost < bestCost) {
-					// printf("Achou melhor custo para veiculo %d: %.2f\n", index, cost);
 					for(int i = 0; i < N-1; i++) {
 						s[index][i] = aux[i];
 					}
@@ -117,18 +109,16 @@ void getNeighborhood(Cliente *corrente, int index) {
 		j = 0;
 		i++;
 	}
-
-	// printf("Custo após a manipulação: %.2f\n", getCostOf(s[index]));
 }
 
 void clientsInit(FILE* arq) {
 
-	int qntdLeitura, id;
-	float x,y,demanda;
+	int qtdLeitura, id;
+	float x, y, demanda;
 	c = malloc(N * sizeof(Cliente));
 	
 	for(int i = 0; i < N; i++) {
-		qntdLeitura = fscanf(arq,"%d\t%f\t%f",&id,&x,&y);
+		qtdLeitura = fscanf(arq, "%d\t%f\t%f", &id, &x, &y);
 		c[i].id = id;
 		c[i].x = x;
 		c[i].y = y;	
@@ -136,31 +126,18 @@ void clientsInit(FILE* arq) {
 	
 	for(int i = 0; i < N; i++) {
 
-		qntdLeitura = fscanf(arq,"%d\t%f",&id,&demanda);
+		qtdLeitura = fscanf(arq, "%d\t%f", &id, &demanda);
 		c[i].demanda = demanda;
-		 
 	}	
 }
 
 void vehiclesInit() {
 	v = malloc(V * sizeof(Veiculo));
 
-
 	for(int i = 0; i <= V; i++) {
 		v[i].id = i+1;
 		v[i].state = 1; // Todos os veículos começam no depósito
 		v[i].capacity = C; // Todos os veículos começam com a mesma capacidade
-	}
-}
-
-void matrixInit() {
-	for(int i = 0; i < V; i++) {
-		for(int j = 0; j < N-1; j++) {
-			s[i][j].id = 0;
-			s[i][j].x = 0;
-			s[i][j].y = 0;
-			s[i][j].demanda = 0;
-		}
 	}
 }
 
@@ -247,7 +224,7 @@ int main() {
 	double cpu_time_used;
 
 	FILE *arq;
-	arq = fopen("X-n101-k25.txt","rt");
+	arq = fopen("X-n204-k19.txt","rt");
 
 	if(arq == NULL) {
    		printf("Erro na leitura do arquivo\n");
@@ -307,7 +284,7 @@ int main() {
 	cpu_time_used =((double)(end-start))/CLOCKS_PER_SEC;
 
 
-	printf("Tempo(in seconds): %.6f\n", cpu_time_used);
+	printf("Tempo (em segundos): %.6f\n", cpu_time_used);
 
 	free(c);
 	free(v);
