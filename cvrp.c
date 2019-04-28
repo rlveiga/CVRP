@@ -4,10 +4,9 @@
 #include <math.h>
 #include <time.h>
 
-//Para  X-n101-k25
-#define N 204 // clientes + depósito
-#define V 19 //  numero minimo de veículos
-#define C 836
+#define N 101 // clientes + depósito
+#define V 25 //  numero minimo de veículos
+#define C 206
 
 //Arestas distancia entre pontos
 double d[N][N];
@@ -59,7 +58,7 @@ double getCostOf(Cliente *path) {
 	return cost;
 }
 
-int getNeighborhood2(Cliente *corrente, int index) {
+void getNeighborhood2(Cliente *corrente, int index) {
 
 	double bestCost = getCostOf(corrente);
 
@@ -76,7 +75,6 @@ int getNeighborhood2(Cliente *corrente, int index) {
 					for(int i = 0; i < N-1; i++) {
 						s[index][i] = corrente[i];
 					}
-					return 1;
 				}
 
 				Cliente temp = aux[i];
@@ -89,8 +87,6 @@ int getNeighborhood2(Cliente *corrente, int index) {
 		}
 		i++;
 	}
-
-	return 0;
 }
 
 void getNeighborhood(Cliente *corrente, int index) {
@@ -112,7 +108,6 @@ void getNeighborhood(Cliente *corrente, int index) {
 				cost = getCostOf(corrente);
 
 				if(cost < bestCost) {
-					printf("Novo melhor caminho\n", cost);
 					for(int i = 0; i < N-1; i++) {
 						s[index][i] = corrente[i];
 					}
@@ -140,7 +135,7 @@ void getNeighborhood(Cliente *corrente, int index) {
 	// }
 }
 
-void clientsInitFile(FILE* arq) {
+void clientsInit(FILE* arq) {
 
 	int qntdLeitura, id;
 	float x,y,demanda;
@@ -161,24 +156,6 @@ void clientsInitFile(FILE* arq) {
 	}	
 }
 
-void clientsInit() {
-	srand(time(NULL));
-
-	c = malloc(N * sizeof(Cliente));
-
-	for(int i = 0; i < N; i++) {
-		c[i].id = i;
-		c[i].x = (rand() % 99) + 1;
-		c[i].y = (rand() % 99) + 1;
-
-		if(i == 0)
-			c[i].demanda = 0;
-
-		else
-			c[i].demanda = (rand() % 99) + 1;
-	}
-}
-
 void vehiclesInit() {
 	v = malloc(V * sizeof(Veiculo));
 
@@ -190,11 +167,6 @@ void vehiclesInit() {
 	}
 }
 
-//Distacia entre cliente1 e cliente2
-double calcDistancia(Cliente cliente1,Cliente cliente2){
-	return sqrt(pow(abs(cliente1.x-cliente2.x),2)+ pow(abs(cliente1.y-cliente2.y),2));
-}
-
 void geraArestas(Cliente *clientes) {
 	for(int i = 0; i < N; i++) {
 		for(int j = 0; j < N; j++) {
@@ -203,7 +175,7 @@ void geraArestas(Cliente *clientes) {
 			}
 
 			else {
-				d[i][j] = sqrt(pow(abs(clientes[i].x-clientes[j].x),2)+ pow(abs(clientes[i].y-clientes[j].y),2));
+				d[i][j] = sqrt(pow(fabs(clientes[i].x-clientes[j].x),2)+ pow(fabs(clientes[i].y-clientes[j].y),2));
 			}
 		}
 	}
@@ -248,16 +220,16 @@ Cliente calcClienteProximo(Veiculo v1){
 
 int counter = 0;
 
-int geraCaminho(Veiculo v1){
-		//Achar cliente disponível mais próximo
-		Cliente clienteProx = calcClienteProximo(v1);
+void geraCaminho(Veiculo v1){
+	//Achar cliente disponível mais próximo
+	Cliente clienteProx = calcClienteProximo(v1);
 
-		//Veículo volta pro depósito
-		if(clienteProx.id == 1) {
-			counter = 0;
-			return 0;
-		}
+	//Veículo volta pro depósito
+	if(clienteProx.id == 1) {
+		counter = 0;
+	}
 
+	else {
 		s[(v1.id)-1][counter] = clienteProx;
 		counter++; 
 			
@@ -266,21 +238,23 @@ int geraCaminho(Veiculo v1){
 		v1.state = clienteProx.id;
 
 		geraCaminho(v1);
+	}
 }
 
 int main() {
 
-	double totalCost = 0;
-	clock_t start,end;
+	double initialCost, totalCost;
+	clock_t start, end;
 	double cpu_time_used;
 
 	FILE *arq;
 	arq = fopen("X-n101-k25.txt","rt");
-	if(arq == NULL){
-   		printf("Erro, nao foi possivel abrir o arquivo\n");
+
+	if(arq == NULL) {
+   		printf("Erro na leitura do arquivo\n");
  	}
 
-	clientsInitFile(arq);
+	clientsInit(arq);
 
 	fclose(arq);
 	
@@ -288,6 +262,7 @@ int main() {
 
 	geraArestas(c);
 
+	//Gerando solução inicial para os veículos por meio de heurísticas
 	for(int i = 0; i < V; i++)
 		geraCaminho(v[i]);
 
@@ -306,13 +281,16 @@ int main() {
 
 	printf("\n");
 
-	//Calculate initial cost, without hill-climbing
-	for(int i = 0; i < V; i++) {
-		totalCost = totalCost + getCostOf(s[i]);
-	}
-	printf("Custo inicial: %.2f\n", totalCost);
+	//Calculando custo da solução inicial
+	initialCost = 0;
 
-	totalCost = 0;
+	for(int i = 0; i < V; i++) {
+		initialCost = initialCost + getCostOf(s[i]);
+	}
+
+	printf("Custo inicial: %.2f\n", initialCost);
+
+	// totalCost = 0;
 
 	start = clock();
 	for(int i = 0; i < V; i++) {
@@ -339,6 +317,7 @@ int main() {
 	}
 	printf("Custo final: %.2f\n", totalCost);
 	printf("Tempo(in seconds): %.6f\n", cpu_time_used);
+
 	free(c);
 	free(v);
 }
