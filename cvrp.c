@@ -35,104 +35,90 @@ Veiculo *v;
 //Matriz solução
 Cliente s[V][N-1];
 
-double bestSolutionCost = 100000;
-Cliente *bestSolution;
+void exibeRota(Cliente *path) {
+	int i = 0;
+	while(path[i].id != 1) {
+		printf("%d\n", path[i].id);
+		i++;
+	}
+
+	printf("\n");
+}
+
+void copyArray(Cliente *source, Cliente *dest) {
+	int i = 0;
+
+	while(source[i-1].id != 1) {
+		dest[i] = source[i];
+		i++;
+	}
+}
 
 double getCostOf(Cliente *path) {
 
 	double cost = 0;
 
 	//Custo depósito --> primeiro cliente
-	cost = cost + d[0][path[0].id];
+	cost = cost + d[1][path[0].id];
+	// printf("Custo deposito - %d: %.2f\n", path[0].id, d[1][path[0].id]);
 
 	int i = 0;
 	//Enquanto o veiculo não volta para o depósito, somar custo entre clientes
-	while(path[i].id != 0) {
+	while(path[i+1].id != 1) {
 		cost = cost + d[path[i].id][path[i+1].id]; 
+		// printf("Custo %d - %d: %.2f\n", path[i].id, path[i+1].id, d[path[i].id][path[i+1].id]);
 		i++;
 	}
 
 	//Custo último cliente --> depósito
-	cost = cost + d[path[i].id][0];
+	cost = cost + d[path[i].id][1];
 
 	return cost;
 }
 
-void getNeighborhood2(Cliente *corrente, int index) {
-
-	double bestCost = getCostOf(corrente);
-
-	Cliente *aux = corrente;
-
-	int i = 0;
-	int j = 0;
-	double cost = 100000;
-
-	while(corrente[i].id != 0) {
-		while(corrente[j].id != 0) {
-			if(i != j) {
-				if(cost < bestCost) {
-					for(int i = 0; i < N-1; i++) {
-						s[index][i] = corrente[i];
-					}
-				}
-
-				Cliente temp = aux[i];
-				corrente[i] = aux[j];
-				corrente[j] = temp;
-
-				cost = getCostOf(corrente);
-			}
-			j++;
-		}
-		i++;
-	}
-}
-
 void getNeighborhood(Cliente *corrente, int index) {
 
+	// exibeRota(corrente);
+
 	double bestCost = getCostOf(corrente);
 
-	Cliente *aux = corrente;
+	Cliente aux[N-1];
+
+	copyArray(corrente, aux);
 
 	int i = 0;
 	int j = 0;
 	double cost;
 
-	printf("Custo antes de manipulacao: %.2f\n", getCostOf(corrente));
+	// printf("Custo antes da manipulação: %.2f\n", getCostOf(corrente));
 
-	while(corrente[i].id != 0) {
-		while(corrente[j].id != 0) {
+	while(corrente[i].id != 1) {
+		while(corrente[j].id != 1) {
 			if(i != j) {
 
-				cost = getCostOf(corrente);
+				copyArray(corrente, aux);
+
+				Cliente temp = corrente[i];
+				aux[i] = corrente[j];
+				aux[j] = temp;
+
+				cost = getCostOf(aux);
 
 				if(cost < bestCost) {
+					// printf("Achou melhor custo para veiculo %d: %.2f\n", index, cost);
 					for(int i = 0; i < N-1; i++) {
-						s[index][i] = corrente[i];
+						s[index][i] = aux[i];
 					}
 					bestCost = cost;
 				}
-
-				Cliente temp = aux[i];
-				corrente[i] = aux[j];
-				corrente[j] = temp;
 			}
 			j++;
 		}
+		j = 0;
 		i++;
 	}
 
-	printf("Custo depois de manipulacao: %.2f\n", getCostOf(s[index]));
-
-	// printf("Novo caminho do veiculo %d:\n", v[index].id);
-
-	// i = 0;
-
-	// while(s[index][i].id != 0) {
-	// 	printf("%d\n", s[index][i].id);
-	// 	i++;
-	// }
+	// printf("Custo após a manipulação: %.2f\n", getCostOf(s[index]));
 }
 
 void clientsInit(FILE* arq) {
@@ -162,20 +148,31 @@ void vehiclesInit() {
 
 	for(int i = 0; i <= V; i++) {
 		v[i].id = i+1;
-		v[i].state = 0; // Todos os veículos começam no depósito
+		v[i].state = 1; // Todos os veículos começam no depósito
 		v[i].capacity = C; // Todos os veículos começam com a mesma capacidade
 	}
 }
 
+void matrixInit() {
+	for(int i = 0; i < V; i++) {
+		for(int j = 0; j < N-1; j++) {
+			s[i][j].id = 0;
+			s[i][j].x = 0;
+			s[i][j].y = 0;
+			s[i][j].demanda = 0;
+		}
+	}
+}
+
 void geraArestas(Cliente *clientes) {
-	for(int i = 0; i < N; i++) {
-		for(int j = 0; j < N; j++) {
+	for(int i = 1; i <= N; i++) {
+		for(int j = 1; j <= N; j++) {
 			if(i == j) {
 				d[i][j] = 0;
 			}
 
 			else {
-				d[i][j] = sqrt(pow(fabs(clientes[i].x-clientes[j].x),2)+ pow(fabs(clientes[i].y-clientes[j].y),2));
+				d[i][j] = sqrt(pow(fabs(clientes[i-1].x-clientes[j-1].x),2) + pow(fabs(clientes[i-1].y-clientes[j-1].y),2));
 			}
 		}
 	}
@@ -206,7 +203,7 @@ Cliente calcClienteProximo(Veiculo v1){
 		if(v1.state != c[i].id) {
 			if(isAvailable(v1, c[i])) {
 				//Pega distância entre veículo e potencial cliente pela matriz de arestas
-				distancia = d[c[i].id][v1.id];
+				distancia = d[c[i].id][v1.state];
 				if (distancia < distanciaMin) {
 					distanciaMin = distancia;
 					clienteMin = c[i];
@@ -220,13 +217,15 @@ Cliente calcClienteProximo(Veiculo v1){
 
 int counter = 0;
 
-void geraCaminho(Veiculo v1){
+int geraCaminho(Veiculo v1){
 	//Achar cliente disponível mais próximo
 	Cliente clienteProx = calcClienteProximo(v1);
 
 	//Veículo volta pro depósito
 	if(clienteProx.id == 1) {
+		s[(v1.id)-1][counter] = clienteProx;
 		counter = 0;
+		return 0;
 	}
 
 	else {
@@ -243,7 +242,7 @@ void geraCaminho(Veiculo v1){
 
 int main() {
 
-	double initialCost, totalCost;
+	double custoInicial = 0, custoFinal = 0;
 	clock_t start, end;
 	double cpu_time_used;
 
@@ -266,56 +265,48 @@ int main() {
 	for(int i = 0; i < V; i++)
 		geraCaminho(v[i]);
 
-	printf("Solucao inicial:\n");
+	printf("Solução inicial:\n\n");
 
-	int j = 0;
 	for(int i = 0; i < V; i++) {
-		printf("Rota do veiculo %d\n", v[i].id);
-		while(s[i][j].id != 0) {
-			printf("%d\n", s[i][j].id);
-			j++;
-		}
+		printf("Rota do veiculo %d:\n", v[i].id);
+		exibeRota(s[i]);
+	}
 
-		j = 0;
+	for(int i = 0; i < V; i++) {
+		custoInicial = custoInicial + getCostOf(s[i]);
+	}
+
+	printf("Custo inicial: %.2f\n", custoInicial);
+
+	//Começando a calcular tempo de execução
+	start = clock();
+
+	Cliente *newArray;
+
+	for(int i = 0; i < V; i++) {
+		copyArray(s[i], newArray);
+		getNeighborhood(newArray, i);
 	}
 
 	printf("\n");
 
-	//Calculando custo da solução inicial
-	initialCost = 0;
+	printf("Solução após hill-climbing:\n\n");
 
 	for(int i = 0; i < V; i++) {
-		initialCost = initialCost + getCostOf(s[i]);
+		printf("Rota do veiculo %d:\n", v[i].id);
+		exibeRota(s[i]);
 	}
 
-	printf("Custo inicial: %.2f\n", initialCost);
-
-	// totalCost = 0;
-
-	start = clock();
 	for(int i = 0; i < V; i++) {
-		for(int j = 0; j < 50; j++)
-			getNeighborhood2(s[i], i);
+		custoFinal = custoFinal + getCostOf(s[i]);
 	}
+
+	printf("Custo final: %.2f\n", custoFinal);
+
 	end  = clock();
 	cpu_time_used =((double)(end-start))/CLOCKS_PER_SEC;
 
-	printf("Solucao final:\n");
-	j = 0;
-	for(int i = 0; i < V; i++) {
-		printf("Rota do veiculo %d\n", v[i].id);
-		while(s[i][j].id != 0) {
-			printf("%d\n", s[i][j].id);
-			j++;
-		}
 
-		j = 0;
-	}
-
-	for(int i = 0; i < V; i++) {
-		totalCost = totalCost + getCostOf(s[i]);
-	}
-	printf("Custo final: %.2f\n", totalCost);
 	printf("Tempo(in seconds): %.6f\n", cpu_time_used);
 
 	free(c);
