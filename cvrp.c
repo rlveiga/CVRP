@@ -4,9 +4,9 @@
 #include <math.h>
 #include <time.h>
 
-#define N 204 // clientes + depósito
-#define V 19 //  numero minimo de veículos
-#define C 836
+#define N 101 // clientes + depósito
+#define V 25 //  numero minimo de veículos
+#define C 206
 
 //Matriz representando distancia entre pontos (arestas)
 double d[N][N];
@@ -220,11 +220,12 @@ int geraCaminho(Veiculo v1){
 int main() {
 
 	double custoInicial = 0, custoFinal = 0;
-	clock_t start, end;
-	double cpu_time_used;
+	clock_t start, end, programStart, programEnd;
+	// clock_t hc_start, hc_end;
+	double cpu_time;
 
 	FILE *arq;
-	arq = fopen("X-n204-k19.txt","rt");
+	arq = fopen("X-n101-k25.txt","rt");
 
 	if(arq == NULL) {
    		printf("Erro na leitura do arquivo\n");
@@ -237,6 +238,8 @@ int main() {
 	vehiclesInit();
 
 	geraArestas(c);
+
+	start = clock();
 
 	//Gerando solução inicial para os veículos por meio de heurísticas
 	for(int i = 0; i < V; i++)
@@ -255,6 +258,11 @@ int main() {
 
 	printf("Custo inicial: %.2f\n", custoInicial);
 
+	end = clock();
+	cpu_time =((double)(end-start))/CLOCKS_PER_SEC;
+
+	printf("Tempo de execução para solução inicial (em segundos): %.6f\n", cpu_time);
+
 	//Começando a calcular tempo de execução
 	start = clock();
 
@@ -267,7 +275,7 @@ int main() {
 
 	printf("\n");
 
-	printf("Solução após hill-climbing:\n\n");
+	printf("Solução após hill climbing:\n\n");
 
 	for(int i = 0; i < V; i++) {
 		printf("Rota do veiculo %d:\n", v[i].id);
@@ -281,10 +289,10 @@ int main() {
 	printf("Custo final: %.2f\n", custoFinal);
 
 	end  = clock();
-	cpu_time_used =((double)(end-start))/CLOCKS_PER_SEC;
+	cpu_time =((double)(end-start))/CLOCKS_PER_SEC;
 
 
-	printf("Tempo (em segundos): %.6f\n", cpu_time_used);
+	printf("Tempo de execução para hill climbing (em segundos): %.6f\n", cpu_time);
 
 	free(c);
 	free(v);
